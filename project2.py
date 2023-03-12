@@ -1,19 +1,19 @@
 # Importing the library
 import cv2 as cv
 import numpy as np
-import heapq as hq
 import pygame
 from queue import PriorityQueue
 import re
 import time
 
   
-# Variable to keep our game loop running
-goal_found=False
+
+# Initializing the three used colors
 color = (255,255,255)
 color_2 = (255,200,150)
 color_3=(0,0,0)
 
+# Initializing the map
 pygame.init()
 width, height = 600, 250
 
@@ -21,22 +21,19 @@ width, height = 600, 250
 surface = pygame.Surface((width,height))
 surface.fill(color_2)
 
- 
 # Drawing Rectangle
 pygame.draw.rect(surface, color, pygame.Rect(5, 5, 590, 240))
 pygame.draw.rect(surface, color_2, pygame.Rect(95, 145, 60, 100))
 pygame.draw.rect(surface, color_2, pygame.Rect(95, 5, 60, 105))
 pygame.draw.polygon(surface,color_2,[(230.5,84.61),(300,44.23),(369.5,84.61),(369.5,165.39),(300,205.77),(230.5,165.39)])
 pygame.draw.polygon(surface,color_2,[(455,3.82),(515.59,125),(455,246.18)])
-# pygame.display.flip()
-
 
 # Convert surface to a 2D array with 0 for the specific color and 1 for other colors
 arr = np.zeros((surface.get_width(), surface.get_height()))
 pixel = pygame.surfarray.pixels3d(surface)
 arr[np.where((pixel == color_2).all(axis=2))] = 1
 
-
+# Function for action set
 # 0:right,1:rightdown,2:down,3:leftdown,4:left,5:leftup,6:up,7:rightup
 def move(lst,i):
     coords=list(lst[3])
@@ -72,7 +69,7 @@ def move(lst,i):
     return(tuple(coords), cost)
 
 
-start_time=time.time()
+# Start the algorithm, ask for user input in the given format, out of reachable points
 while True:
     print("Enter start x,y coordinates (e.g. 2,3): ")
     user_input = input()
@@ -105,78 +102,87 @@ while True:
     else:
         print("Invalid input. Please enter x,y coordinates in the format 'x,y'.")
 
-
+# Defining the require variables for the algorithm, the pixels is a dictionary for the explored nodes
 pixels={}
-
 d1 = [0, 0, -1, start]
 Q = PriorityQueue()
 Q.put(d1)
-
-
 parent=-1
 child=1
-if(not ((arr[start]==1) or (arr[goal]==1) )):
-    while(True):
-        
-        if(Q.empty()):
-            print("Goal is unreachable")
-            end_time=time.time()
-            break
-        first = Q.get()
-        pixels[first[1]]=[first[0],first[2],first[3]]
-        parent=first[1]
-        print(pixels[first[1]])
-       
-        if(first[3]==goal):
-            print("Goal reached")
-            end_time=time.time()
-            break
-        for i in range(0,8):
-            coords,cost=move(first,i)
-            
-            pixel_found = False
-            for pixel in pixels.items():
-                if pixel[-1] == coords:
-                    pixel_found = True
-                    break
 
-            
-            if(not(arr[coords]==1) and ( not(pixel_found)) and not(any(value[-1] == coords for value in pixels.values()))):
-                if not(any(x[-1] == coords for x in Q.queue)): 
-                    Q.put([cost, child, parent, coords])
-                    child += 1
+# Start the timer
+start_time=time.time()
 
-                elif (any(x[-1] == coords and x[0] > cost for x in Q.queue)): 
-                    index = next((i for i, item in enumerate(Q.queue) if item[-1] == coords), None)
-                    Q.queue[index][0] = cost
-                    Q.queue[index][2]=parent
+# The algorithm
+while(True):
+
+    # Check if there is any pixel that we haven't visited yet  
+    if(Q.empty()):
+        print("Goal is unreachable")
+        end_time=time.time()
+        break
+    # Popping the pixel with the lowest cost and adding it to the dictionary
+    first = Q.get()
+    pixels[first[1]]=[first[0],first[2],first[3]]
+    parent=first[1]
+
+    # Printing the latest element in the dictionary
+    print(pixels[first[1]])
     
-    s=pygame.display.set_mode((width,height))
-    s.blit(surface,(0,0))
+    # Checking if the goal was reached
+    if(first[3]==goal):
+        print("Goal reached")
+        end_time=time.time()
+        break
+    # Looping the 8 different actions
+    for i in range(0,8):
+        coords,cost=move(first,i)
+        
+        pixel_found = False
+        for pixel in pixels.items():
+            if pixel[-1] == coords:
+                pixel_found = True
+                break
+
+        
+        if(not(arr[coords]==1) and ( not(pixel_found)) and not(any(value[-1] == coords for value in pixels.values()))):
+            if not(any(x[-1] == coords for x in Q.queue)): 
+                Q.put([cost, child, parent, coords])
+                child += 1
+
+            elif (any(x[-1] == coords and x[0] > cost for x in Q.queue)): 
+                index = next((i for i, item in enumerate(Q.queue) if item[-1] == coords), None)
+                Q.queue[index][0] = cost
+                Q.queue[index][2]=parent
+
+s=pygame.display.set_mode((width,height))
+s.blit(surface,(0,0))
+pygame.display.update()
+
+for value in pixels.values():
+    s.set_at(value[-1],(255,0,0))
     pygame.display.update()
 
-    for value in pixels.values():
-        s.set_at(value[-1],(255,0,0))
-        pygame.display.update()
+
+# Finalizing the end
+if(not (Q.empty())):
+
+            
+    value = next(i for i in pixels if pixels[i][-1] == goal)
     
-
-    # Finalizing the end
-    if(not (Q.empty())):
-
-                
-        value = next(i for i in pixels if pixels[i][-1] == goal)
-       
-        # Backtrack and generate the solution path
-        path=[]
-        while(pixels[value][1]!=-1):
-            path.append(pixels[value][-1])
-            value=pixels[value][1]
+    # Backtrack and generate the solution path
+    path=[]
+    while(pixels[value][1]!=-1):
         path.append(pixels[value][-1])
-        path.reverse()
-        
-        for walk in path:
-            s.set_at(walk,(0,0,0))
-            pygame.display.update()
+        value=pixels[value][1]
+    path.append(pixels[value][-1])
+    path.reverse()
+    
+    for walk in path:
+        s.set_at(walk,(0,0,0))
+        pygame.display.update()
+
+    
 
 print(end_time-start_time)
    
