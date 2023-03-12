@@ -158,7 +158,9 @@ if(not ((arr[start]==1) or (arr[goal]==1) )):
     for value in pixels.values():
         s.set_at(value[-1],(255,0,0))
         pygame.display.update()
-        
+    
+
+    # Finalizing the end
     if(not (Q.empty())):
 
                 
