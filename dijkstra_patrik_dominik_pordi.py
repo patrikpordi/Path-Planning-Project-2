@@ -1,5 +1,4 @@
 # Importing the library
-import cv2 as cv
 import numpy as np
 import pygame
 from queue import PriorityQueue
@@ -138,37 +137,31 @@ while(True):
     # Looping the 8 different actions
     for i in range(0,8):
         coords,cost=move(first,i)
-        
-        # # Condition if
-        # pixel_found = False
-        # for pixel in pixels.items():
-        #     if pixel[-1] == coords:
-        #         pixel_found = True
-        #         break
-
+        # Checking if the new pixel is in the obstacle space or it was already explored
         if((not(arr[coords]==1)) and (not(any(value[-1] == coords for value in pixels.values())))):
+            # Adding it to the queue if it was not there yet
             if not(any(x[-1] == coords for x in Q.queue)): 
                 Q.put([cost, child, parent, coords])
                 child += 1
 
+            # Updating the queue if the coordinate is found with lower cost
             elif (any(x[-1] == coords and x[0] > cost for x in Q.queue)): 
                 index = next((i for i, item in enumerate(Q.queue) if item[-1] == coords), None)
                 Q.queue[index][0] = cost
                 Q.queue[index][2]=parent
 
-if surface.get_locked():
-    surface.unlock()
+# Creating the end display
 s=pygame.display.set_mode((width,height))
 s.blit(surface,(0,0))
 pygame.display.update()
 
-
+# Showing the exploration
 for value in pixels.values():
     s.set_at(value[-1],(255,0,0))
     pygame.display.update()
 
 
-# Finalizing the end
+# Showing the optimal path if the goal was found
 if(not (Q.empty())):   
     value = next(i for i in pixels if pixels[i][-1] == goal)
     
@@ -180,20 +173,20 @@ if(not (Q.empty())):
     path.append(pixels[value][-1])
     path.reverse()
     
+    # Displaying the path
     for walk in path:
         s.set_at(walk,(0,0,0))
         pygame.display.update()
 
     
-
-print(end_time-start_time)
-   
-
+# Printing the time used by the algorithm
+print('Time:',end_time-start_time)
+# SHowing the screen
 running = True
 pygame.time.wait(10000)
-# game loop
+# Game loop
 while running:
-# for loop through the event queue  
+# For loop through the event queue  
     for event in pygame.event.get():
         
         # Check for QUIT event      
