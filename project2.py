@@ -32,6 +32,7 @@ pygame.draw.polygon(surface,color_2,[(455,3.82),(515.59,125),(455,246.18)])
 arr = np.zeros((surface.get_width(), surface.get_height()))
 pixel = pygame.surfarray.pixels3d(surface)
 arr[np.where((pixel == color_2).all(axis=2))] = 1
+del pixel
 
 # Function for action set
 # 0:right,1:rightdown,2:down,3:leftdown,4:left,5:leftup,6:up,7:rightup
@@ -138,14 +139,14 @@ while(True):
     for i in range(0,8):
         coords,cost=move(first,i)
         
-        pixel_found = False
-        for pixel in pixels.items():
-            if pixel[-1] == coords:
-                pixel_found = True
-                break
+        # # Condition if
+        # pixel_found = False
+        # for pixel in pixels.items():
+        #     if pixel[-1] == coords:
+        #         pixel_found = True
+        #         break
 
-        
-        if(not(arr[coords]==1) and ( not(pixel_found)) and not(any(value[-1] == coords for value in pixels.values()))):
+        if((not(arr[coords]==1)) and (not(any(value[-1] == coords for value in pixels.values())))):
             if not(any(x[-1] == coords for x in Q.queue)): 
                 Q.put([cost, child, parent, coords])
                 child += 1
@@ -155,9 +156,12 @@ while(True):
                 Q.queue[index][0] = cost
                 Q.queue[index][2]=parent
 
+if surface.get_locked():
+    surface.unlock()
 s=pygame.display.set_mode((width,height))
 s.blit(surface,(0,0))
 pygame.display.update()
+
 
 for value in pixels.values():
     s.set_at(value[-1],(255,0,0))
@@ -165,9 +169,7 @@ for value in pixels.values():
 
 
 # Finalizing the end
-if(not (Q.empty())):
-
-            
+if(not (Q.empty())):   
     value = next(i for i in pixels if pixels[i][-1] == goal)
     
     # Backtrack and generate the solution path
